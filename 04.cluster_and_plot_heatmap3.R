@@ -1,3 +1,5 @@
+# adjusted by Mara on 04-07-2019 to add rows which show whether effectors are located on the core or accessory genome of Fo47 and whether a gene produces an enzyme (if the gene name ends on 'ase').
+
 print('-------------------------------')
 print("//Executing R script for clustering and plotting into a tree")
 
@@ -43,6 +45,8 @@ row.names(d) <- d[,1] #rename rows to values in first collumn
 d[,1] <- NULL #remove the first collumn
 title <- paste("Presence of candidate sequences in", nrow(d), "isolates and", ncol(d), "ORFs: \n", distance_matrix_rows, clustering_method_rows, distance_matrix_cols, clustering_method_cols)
 data <- as.matrix(d)
+# Mara 15-07-2019: the following line removes columns with only 0s, because these result in the following error when you perform clustering: "Error in hclust(coldistance, method = clustering_method_cols): NA/NaN/Inf in foreign function call (arg 11)"
+data <- data[,colSums(data^2) !=0]
 
 #distance    = Dist(data, method = 'pearson')
 distance = dist.binary(data, method=distance_matrix_rows, diag = FALSE, upper = FALSE)
@@ -77,26 +81,48 @@ write(hc2Newick(colcluster),file="cluster_cols.newick")
 
 
 #for the data matrix to be plotted ('data'), check if 'SIX' in name. In case this is true, plot that name.
-column_annotation = matrix("#dbdbdb", ncol=2, nrow = ncol(data))
+column_annotation = matrix("#dbdbdb", ncol=4, nrow = ncol(data))
 sixgenecodes <- list('SIX','MAPYSM','MAPYGIV','MKVALV','MQPLRI','MKLSAV','MLVSPI','MAPYSM', 'MKLLWL', 'MFSKAI', 'MTRFHL', 'MHTEYLF', 'MLFKIAW', 'MRFLLLIA', 'MNLKALVV', 'MRFEYI', 'MKLALIA', 'MKYLYLL', 'MDRTHRG', 'MFVSPKA', 'MNLKALVV')
 sixgene_list = list()
 for (name in sixgenecodes){
   sixgene_list[length(sixgene_list)+1] <- list(grep(name, colnames(data)))
 }
 for (sixgene_integer in sixgene_list) {
-  column_annotation[sixgene_integer,1] = "red"
+  column_annotation[sixgene_integer,1] = "#93003a"
 }
 
-LScodes <- list('enz_')
+#if *ase in name, mark as enzyme
+LScodes <- list('ase')
 LS_list = list()
 for (name in LScodes){
   LS_list <- list(grep(name, colnames(data)))
 }
 for (LS_integer in LS_list) {
-  column_annotation[LS_integer,2] = "black"
+  column_annotation[LS_integer,2] = "#ffa59e"
 }
 
-colnames(column_annotation) <- c("SIX genes", "Secreted enzymes")
+# add this code to colour core effectors on 'core' row
+corecodes <- list('core')
+core_list = list()
+for (name in corecodes){
+  core_list <- list(grep(name, colnames(data)))
+}
+for (core_integer in core_list) {
+  column_annotation[core_integer,3] = "#5681b9"
+}
+
+# add this code to colour accessory effectors on 'accessory' row
+corecodes <- list('accessory')
+core_list = list()
+for (name in corecodes){
+  core_list <- list(grep(name, colnames(data)))
+}
+for (core_integer in core_list) {
+  column_annotation[core_integer,4] = "#93c4d2"
+}
+
+# add located on core and on accessory
+colnames(column_annotation) <- c("SIX/AVR", "Secreted enzymes", "Located on core genome in Fo47", "Located on accessory genome in Fo47")
 #rownames(NA/NaN/Inf in foreign function call (arg 11)
 rownames(column_annotation) <- colnames(data)
 
